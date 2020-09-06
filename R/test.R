@@ -180,13 +180,43 @@ a %>%
         `[`(seq(3,length(.),3))
 
 
-a %>%
+s <- a %>%
         html_nodes(xpath = "//h2/span[@class='mw-headline'] | //h3/span[@class='mw-headline'] | //div[@class='footballbox']") %>%
         html_text() %>%
         str_subset("(round|leg|(F|f)inal|^\n)")
 
 
+get_stages <- function(txt) {
+        
+        r_list <- c()
+        l_list <- c()
+        
+        r <- c()
+        l <- c()
+        
+        m <- 0
+        
+        for (i in seq_along(1:length(s))) {
+                
+                if (str_detect(txt[i], "round|finals")) {
+                        r <- txt[i]
+                } else if (str_detect(txt[i], "leg")) {
+                        l <- txt[i]
+                } else if (txt[i] == "Final") {
+                        r <- txt[i]
+                        l <- txt[i]
+                } else if (str_detect(txt[i], "^\n")) {
+                        m <- m + 1
+                        r_list[m] <- r
+                        l_list[m] <- l
+                } else {
+                }
+        }
+        return(list(r_list, l_list))
+}
 
+
+get_stages(s)
 
 
 
