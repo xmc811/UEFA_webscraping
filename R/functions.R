@@ -335,12 +335,50 @@ node_to_plyr_df <- function(node) {
 } 
 
 
+get_stages <- function(page) {
+        
+        txt <- page %>%
+                html_nodes(xpath = "//h2/span[@class='mw-headline'] | //h3/span[@class='mw-headline'] | //div[@class='footballbox']") %>%
+                html_text() %>%
+                str_subset("(round|leg|(F|f)inal|^\n)")
+        
+        r_list <- c()
+        l_list <- c()
+        
+        r <- c()
+        l <- c()
+        
+        m <- 0
+        
+        for (i in seq_along(1:length(txt))) {
+                
+                if (str_detect(txt[i], "round|finals")) {
+                        r <- txt[i]
+                } else if (str_detect(txt[i], "leg")) {
+                        l <- txt[i]
+                } else if (txt[i] == "Final") {
+                        r <- txt[i]
+                        l <- txt[i]
+                } else if (str_detect(txt[i], "^\n")) {
+                        m <- m + 1
+                        r_list[m] <- r
+                        l_list[m] <- l
+                } else {
+                }
+        }
+        return(list(r_list, l_list))
+}
+
 
 get_match_df <- function(page) {
         
-        df <- tibble(Time = get_match_time(page),
+        df <- tibble(Stage = get_stages(page)[[1]],
+                     Leg = get_stages(page)[[2]],
+                     Time = get_match_time(page),
                      Home_Team = get_team_names(page)[[1]],
                      Away_Team = get_team_names(page)[[2]],
+                     Home_Score = get_match_scores(page)[[1]],
+                     Away_Score = get_match_scores(page)[[2]],
                      Home_Team_Full = get_team_full_names(page)[[1]],
                      Away_Team_Full = get_team_full_names(page)[[2]],
                      Home_Team_Link = get_team_links(page)[[1]],
@@ -349,8 +387,6 @@ get_match_df <- function(page) {
                      Away_Country = get_country_full_names(page)[[2]],
                      Home_Country_Link = get_country_links(page)[[1]],
                      Away_Country_Link = get_country_links(page)[[2]],
-                     Home_Score = get_match_scores(page)[[1]],
-                     Away_Score = get_match_scores(page)[[2]],
                      Stadium = get_match_meta(page)[[1]],
                      City = get_match_meta(page)[[2]],
                      Stadium_Link = get_match_meta(page)[[3]],

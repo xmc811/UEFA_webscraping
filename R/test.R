@@ -6,7 +6,7 @@ library(tidyverse)
 a <- read_html("https://en.wikipedia.org/wiki/1955%E2%80%9356_European_Cup")
 
 
-get_match_df(a)
+df <- get_match_df(a)
 
 # Time
 
@@ -112,37 +112,6 @@ a %>%
         html_text()
 
 
-# Goalscorer Links
-a %>%
-        html_nodes("div.footballbox") %>%
-        html_nodes("td.fhgoal") %>%
-        `[[`(16) %>%
-        html_nodes("a") %>%
-        html_attr("title")
-
-a %>%
-        html_nodes("div.footballbox") %>%
-        html_nodes("td.fagoal") %>%
-        `[[`(16) %>%
-        html_nodes("a") %>%
-        html_attr("title")
-
-a %>%
-        html_nodes("div.footballbox") %>%
-        html_nodes("td.fhgoal") %>%
-        `[[`(16) %>%
-        html_nodes("a") %>%
-        html_attr("href") %>%
-        str_remove("/wiki/")
-
-a %>%
-        html_nodes("div.footballbox") %>%
-        html_nodes("td.fagoal") %>%
-        `[[`(16) %>%
-        html_nodes("a") %>%
-        html_attr("href") %>%
-        str_remove("/wiki/")
-
 # Location
 txt <- a %>%
         html_nodes("div.footballbox") %>%
@@ -224,72 +193,85 @@ s <- a %>%
         str_subset("(round|leg|(F|f)inal|^\n)")
 
 
-get_stages <- function(txt) {
+get_stages(a)
+
+
+test <- df[1:16,]
+
+x <- test$Home_Score
+names(x) <- test$Home_Team
+y <- test$Away_Score
+names(y) <- test$Away_Team
+
+as.integer((x[order(names(x))] + y[order(names(y))])['Milan'])
+
+
+
+
+test <- test %>%
+        add_column(Home_Agg = 0, .before = "Home_Team_Full") %>%
+        add_column(Away_Agg = 0, .before = "Home_Team_Full")
+
+for (i in seq_along(1:nrow(test))) {
         
-        r_list <- c()
-        l_list <- c()
-        
-        r <- c()
-        l <- c()
-        
-        m <- 0
-        
-        for (i in seq_along(1:length(s))) {
-                
-                if (str_detect(txt[i], "round|finals")) {
-                        r <- txt[i]
-                } else if (str_detect(txt[i], "leg")) {
-                        l <- txt[i]
-                } else if (txt[i] == "Final") {
-                        r <- txt[i]
-                        l <- txt[i]
-                } else if (str_detect(txt[i], "^\n")) {
-                        m <- m + 1
-                        r_list[m] <- r
-                        l_list[m] <- l
-                } else {
-                }
+        if (test$Leg[i] == "Second leg") {
+                test$Home_Agg[i] <- as.integer((x[order(names(x))] + y[order(names(y))])[test$Home_Team[i]])
+                test$Away_Agg[i] <- as.integer((x[order(names(x))] + y[order(names(y))])[test$Away_Team[i]])
+        } else {
+                test$Home_Agg[i] <- test$Home_Score[i]
+                test$Away_Agg[i] <- test$Away_Score[i]
         }
-        return(list(r_list, l_list))
 }
 
 
-get_stages(s)
+
+process_df <- function(df) {
+        
+        x <- df$Home_Score
+        names(x) <- df$Home_Team
+        y <- df$Away_Score
+        names(y) <- df$Away_Team
+        
+        s <- x[order(names(x))] + y[order(names(y))]
+
+        df <- df %>%
+                add_column(Home_Agg = 0, .before = "Home_Team_Full") %>%
+                add_column(Away_Agg = 0, .before = "Home_Team_Full")
+        
+        for (i in seq_along(1:nrow(df))) {
+                
+                if (df$Leg[i] == "Second leg") {
+                        df$Home_Agg[i] <- as.integer(s[df$Home_Team[i]])
+                        df$Away_Agg[i] <- as.integer(s[df$Away_Team[i]])
+                } else {
+                        df$Home_Agg[i] <- df$Home_Score[i]
+                        df$Away_Agg[i] <- df$Away_Score[i]
+                }
+        }
+        return(df)
+}
 
 
+process_df_list <- function(df) {
+        
+        levels <- unique(df$Stage)
+        
+        df_list <- list()
+        
+        for (i in seq_along(1:length(levels))) {
+                
+                df_list[[i]] <- df %>% 
+                        filter(Stage == levels[i]) %>% 
+                        process_df()
+        }
+        
+        df_new <- do.call("rbind", df_list)
+        
+        return(df_new)
+}
 
 
+test <- process_df_list(df)
 
-test <- a %>%
-        html_nodes("div.footballbox") %>%
-        html_nodes("td.fhgoal") %>%
-        html_text() %>%
-        `[`(22)
-
-txt <- test %>%
-        str_split("(?<=('|\\)))(?=[A-Za-z])") %>%
-        `[[`(1)
-
-str_count(txt, "[0-9]{1,3}'")
-
-str_remove_all(txt, "[0-9]{1,3}'|,|\\(o.g.\\)|\\(pen.\\)") %>%
-        str_trim()
-
-do.call("c", str_split(txt, ",")) %>%
-        str_extract("[0-9]{1,3}'([[:space:]]\\(.*\\))?")
-
-do.call("c", str_split(txt, ",")) %>%
-        str_extract("[0-9]{1,3}'([[:space:]]\\(.*\\))?") %>%
-        str_extract("[0-9]{1,3}") %>%
-        as.integer()
-
-do.call("c", str_split(txt, ",")) %>%
-        str_detect("\\(o.g.\\)")
-
-do.call("c", str_split(txt, ",")) %>%
-        str_detect("\\(pen.\\)")
-
-
-txt_score_to_df("")
 
 
