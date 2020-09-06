@@ -16,12 +16,14 @@ a %>%
 a %>%
         html_nodes("div.footballbox") %>%
         html_nodes("th.fhome") %>%
-        html_text()
+        html_text() %>%
+        str_trim()
 
 a %>%
         html_nodes("div.footballbox") %>%
         html_nodes("th.faway") %>%
-        html_text()
+        html_text() %>%
+        str_trim()
 
 
 # Team Link
@@ -40,6 +42,23 @@ a %>%
         `[`(seq(2,length(.),2))
 
 
+a %>%
+        html_nodes("div.footballbox") %>%
+        html_nodes("th.fhome") %>%
+        html_nodes("a") %>%
+        html_attr("href") %>%
+        `[`(seq(1,length(.),2)) %>%
+        str_remove("/wiki/")
+
+a %>%
+        html_nodes("div.footballbox") %>%
+        html_nodes("th.faway") %>%
+        html_nodes("a") %>%
+        html_attr("href") %>%
+        `[`(seq(2,length(.),2)) %>%
+        str_remove("/wiki/")
+
+
 # Country Link
 a %>%
         html_nodes("div.footballbox") %>%
@@ -54,6 +73,22 @@ a %>%
         html_nodes("a") %>%
         html_attr("title") %>%
         `[`(seq(1,length(.),2))
+
+a %>%
+        html_nodes("div.footballbox") %>%
+        html_nodes("th.fhome") %>%
+        html_nodes("a") %>%
+        html_attr("href") %>%
+        `[`(seq(2,length(.),2)) %>%
+        str_remove("/wiki/")
+
+a %>%
+        html_nodes("div.footballbox") %>%
+        html_nodes("th.faway") %>%
+        html_nodes("a") %>%
+        html_attr("href") %>%
+        `[`(seq(1,length(.),2)) %>%
+        str_remove("/wiki/")
 
 # Scores
 a %>%
@@ -77,14 +112,14 @@ a %>%
 a %>%
         html_nodes("div.footballbox") %>%
         html_nodes("td.fhgoal") %>%
-        `[[`(1) %>%
+        `[[`(16) %>%
         html_nodes("a") %>%
         html_text()
 
 a %>%
         html_nodes("div.footballbox") %>%
         html_nodes("td.fagoal") %>%
-        `[[`(1) %>%
+        `[[`(16) %>%
         html_nodes("a") %>%
         html_text()
 
@@ -93,19 +128,34 @@ a %>%
 a %>%
         html_nodes("div.footballbox") %>%
         html_nodes("td.fhgoal") %>%
-        `[[`(1) %>%
+        `[[`(16) %>%
         html_nodes("a") %>%
         html_attr("title")
 
 a %>%
         html_nodes("div.footballbox") %>%
         html_nodes("td.fagoal") %>%
-        `[[`(1) %>%
+        `[[`(16) %>%
         html_nodes("a") %>%
         html_attr("title")
 
-# Location
+a %>%
+        html_nodes("div.footballbox") %>%
+        html_nodes("td.fhgoal") %>%
+        `[[`(16) %>%
+        html_nodes("a") %>%
+        html_attr("href") %>%
+        str_remove("/wiki/")
 
+a %>%
+        html_nodes("div.footballbox") %>%
+        html_nodes("td.fagoal") %>%
+        `[[`(16) %>%
+        html_nodes("a") %>%
+        html_attr("href") %>%
+        str_remove("/wiki/")
+
+# Location
 a %>%
         html_nodes("div.footballbox") %>%
         html_nodes("[class='mobile-float-reset fright']") %>%
@@ -130,7 +180,40 @@ a %>%
         `[`(seq(3,length(.),3))
 
 
+a %>%
+        html_nodes(xpath = "//h2/span[@class='mw-headline'] | //h3/span[@class='mw-headline'] | //div[@class='footballbox']") %>%
+        html_text() %>%
+        str_subset("(round|leg|(F|f)inal|^\n)")
 
 
+
+
+
+
+
+
+test <- a %>%
+        html_nodes("div.footballbox") %>%
+        html_nodes("td.fhgoal") %>%
+        html_text() %>%
+        `[`(22)
+
+txt <- test %>%
+        str_split("(?<=('|\\)))(?=[A-Za-z])") %>%
+        `[[`(1)
+
+str_count(txt, "[0-9]{1,3}'")
+
+str_remove_all(txt, "[0-9]{1,3}'|,|\\(o.g.\\)|\\(pen.\\)") %>%
+        str_trim()
+
+do.call("c", str_split(txt, ",")) %>%
+        str_extract("[0-9]{1,3}'([[:space:]]\\(.*\\))?")
+
+do.call("c", str_split(txt, ",")) %>%
+        str_detect("\\(o.g.\\)")
+
+do.call("c", str_split(txt, ",")) %>%
+        str_detect("\\(pen.\\)")
 
 
