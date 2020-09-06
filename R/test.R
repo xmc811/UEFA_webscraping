@@ -6,101 +6,27 @@ library(tidyverse)
 a <- read_html("https://en.wikipedia.org/wiki/1955%E2%80%9356_European_Cup")
 
 
+get_match_df(a)
+
 # Time
-a %>%
-        html_nodes("div.footballbox") %>%
-        html_nodes("time") %>%
-        html_attr("datetime")
 
-t <- get_match_time(a)
-
-strptime(t[1], format = '%Y-%m-%dT%H:%M:%S', tz = "UTC")
+get_match_time(a)
 
 # Team Name
-a %>%
-        html_nodes("div.footballbox") %>%
-        html_nodes("th.fhome") %>%
-        html_text() %>%
-        str_trim()
-
-a %>%
-        html_nodes("div.footballbox") %>%
-        html_nodes("th.faway") %>%
-        html_text() %>%
-        str_trim()
 
 get_team_names(a)
 
 
 # Team Link
-a %>%
-        html_nodes("div.footballbox") %>%
-        html_nodes("th.fhome") %>%
-        html_nodes("a") %>%
-        html_attr("title") %>%
-        `[`(seq(1,length(.),2))
-
-a %>%
-        html_nodes("div.footballbox") %>%
-        html_nodes("th.faway") %>%
-        html_nodes("a") %>%
-        html_attr("title") %>%
-        `[`(seq(2,length(.),2))
 
 get_team_full_names(a)
-
-
-a %>%
-        html_nodes("div.footballbox") %>%
-        html_nodes("th.fhome") %>%
-        html_nodes("a") %>%
-        html_attr("href") %>%
-        `[`(seq(1,length(.),2)) %>%
-        str_remove("/wiki/")
-
-a %>%
-        html_nodes("div.footballbox") %>%
-        html_nodes("th.faway") %>%
-        html_nodes("a") %>%
-        html_attr("href") %>%
-        `[`(seq(2,length(.),2)) %>%
-        str_remove("/wiki/")
-
 
 get_team_links(a)
 
 # Country Link
-a %>%
-        html_nodes("div.footballbox") %>%
-        html_nodes("th.fhome") %>%
-        html_nodes("a") %>%
-        html_attr("title") %>%
-        `[`(seq(2,length(.),2))
 
-a %>%
-        html_nodes("div.footballbox") %>%
-        html_nodes("th.faway") %>%
-        html_nodes("a") %>%
-        html_attr("title") %>%
-        `[`(seq(1,length(.),2))
 
 get_country_full_names(a)
-
-a %>%
-        html_nodes("div.footballbox") %>%
-        html_nodes("th.fhome") %>%
-        html_nodes("a") %>%
-        html_attr("href") %>%
-        `[`(seq(2,length(.),2)) %>%
-        str_remove("/wiki/")
-
-a %>%
-        html_nodes("div.footballbox") %>%
-        html_nodes("th.faway") %>%
-        html_nodes("a") %>%
-        html_attr("href") %>%
-        `[`(seq(1,length(.),2)) %>%
-        str_remove("/wiki/")
 
 get_country_links(a)
 
@@ -126,7 +52,7 @@ get_match_scores(a)
 
 
 # Goals
-a %>%
+goals <- a %>%
         html_nodes("div.footballbox") %>%
         html_nodes("td.fhgoal") %>%
         html_text()
@@ -144,6 +70,39 @@ a %>%
         `[[`(16) %>%
         html_nodes("a") %>%
         html_text()
+
+ns <- a %>%
+        html_nodes("div.footballbox") %>%
+        html_nodes("td.fhgoal")
+
+ns[[3]] %>%
+        html_nodes("a") %>%
+        html_text() %>%
+        length()
+
+ns[[22]] %>%
+        html_nodes("a") %>%
+        html_text()
+
+ns[[22]] %>%
+        html_nodes("a") %>%
+        html_attr("title")
+
+ns[[22]] %>%
+        html_nodes("a") %>%
+        html_attr("href") %>%
+        str_remove("/wiki/")
+
+node_to_plyr_df(ns[[1]])
+node_to_goal_df(ns[[1]])
+
+inner_join(node_to_goal_df(ns[[1]]), node_to_plyr_df(ns[[1]]), by = 'Player')
+
+
+get_goals_df(a)
+
+
+
 
 a %>%
         html_nodes("div.footballbox") %>%
@@ -185,12 +144,44 @@ a %>%
         str_remove("/wiki/")
 
 # Location
-a %>%
+txt <- a %>%
         html_nodes("div.footballbox") %>%
         html_nodes("[class='mobile-float-reset fright']") %>%
         html_nodes("div") %>%
         html_text() %>%
-        `[`(seq(1,length(.),3))
+        `[`(seq(1,length(.),3)) %>%
+        str_remove_all("\\[.*\\]")
+
+
+do.call("c", str_split(txt, ",")) %>%
+        `[`(seq(1,length(.),2)) %>%
+        str_trim()
+
+do.call("c", str_split(txt, ",")) %>%
+        `[`(seq(2,length(.),2)) %>%
+        str_trim()
+
+a %>%
+        html_nodes("div.footballbox") %>%
+        html_nodes("[class='mobile-float-reset fright']") %>%
+        html_nodes("div") %>%
+        `[`(seq(1,length(.),3)) %>%
+        html_nodes("a") %>%
+        html_attr("href") %>%
+        str_subset("/wiki/") %>%
+        `[`(seq(1,length(.),2)) %>%
+        str_remove("/wiki/")
+
+a %>%
+        html_nodes("div.footballbox") %>%
+        html_nodes("[class='mobile-float-reset fright']") %>%
+        html_nodes("div") %>%
+        `[`(seq(1,length(.),3)) %>%
+        html_nodes("a") %>%
+        html_attr("href") %>%
+        str_subset("/wiki/") %>%
+        `[`(seq(2,length(.),2)) %>%
+        str_remove("/wiki/")
 
 # Attendance
 a %>%
@@ -198,15 +189,33 @@ a %>%
         html_nodes("[class='mobile-float-reset fright']") %>%
         html_nodes("div") %>%
         html_text() %>%
-        `[`(seq(2,length(.),3))
+        `[`(seq(2,length(.),3)) %>%
+        str_extract("[0-9,]+") %>%
+        str_remove_all(",") %>%
+        as.integer()
 
 # Referee
 a %>%
         html_nodes("div.footballbox") %>%
         html_nodes("[class='mobile-float-reset fright']") %>%
         html_nodes("div") %>%
+        `[`(seq(3,length(.),3)) %>%
+        html_nodes("a") %>%
+        `[`(seq(1,length(.),2)) %>%
+        html_attr("href") %>%
+        str_remove("/wiki/")
+
+a %>%
+        html_nodes("div.footballbox") %>%
+        html_nodes("[class='mobile-float-reset fright']") %>%
+        html_nodes("div") %>%
         html_text() %>%
-        `[`(seq(3,length(.),3))
+        `[`(seq(3,length(.),3)) %>%
+        str_remove("Referee:") %>%
+        str_extract("\\(.*\\)") %>%
+        str_remove_all("[()]")
+
+test <- get_match_meta(a)
 
 
 s <- a %>%
@@ -270,9 +279,17 @@ do.call("c", str_split(txt, ",")) %>%
         str_extract("[0-9]{1,3}'([[:space:]]\\(.*\\))?")
 
 do.call("c", str_split(txt, ",")) %>%
+        str_extract("[0-9]{1,3}'([[:space:]]\\(.*\\))?") %>%
+        str_extract("[0-9]{1,3}") %>%
+        as.integer()
+
+do.call("c", str_split(txt, ",")) %>%
         str_detect("\\(o.g.\\)")
 
 do.call("c", str_split(txt, ",")) %>%
         str_detect("\\(pen.\\)")
+
+
+txt_score_to_df("")
 
 
