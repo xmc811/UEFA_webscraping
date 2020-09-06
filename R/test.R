@@ -12,6 +12,10 @@ a %>%
         html_nodes("time") %>%
         html_attr("datetime")
 
+t <- get_match_time(a)
+
+strptime(t[1], format = '%Y-%m-%dT%H:%M:%S', tz = "UTC")
+
 # Team Name
 a %>%
         html_nodes("div.footballbox") %>%
@@ -24,6 +28,8 @@ a %>%
         html_nodes("th.faway") %>%
         html_text() %>%
         str_trim()
+
+get_team_names(a)
 
 
 # Team Link
@@ -41,6 +47,8 @@ a %>%
         html_attr("title") %>%
         `[`(seq(2,length(.),2))
 
+get_team_full_names(a)
+
 
 a %>%
         html_nodes("div.footballbox") %>%
@@ -58,6 +66,8 @@ a %>%
         `[`(seq(2,length(.),2)) %>%
         str_remove("/wiki/")
 
+
+get_team_links(a)
 
 # Country Link
 a %>%
@@ -74,6 +84,8 @@ a %>%
         html_attr("title") %>%
         `[`(seq(1,length(.),2))
 
+get_country_full_names(a)
+
 a %>%
         html_nodes("div.footballbox") %>%
         html_nodes("th.fhome") %>%
@@ -90,11 +102,28 @@ a %>%
         `[`(seq(1,length(.),2)) %>%
         str_remove("/wiki/")
 
+get_country_links(a)
+
+
+
 # Scores
-a %>%
+scores <- a %>%
         html_nodes("div.footballbox") %>%
         html_nodes("th.fscore") %>%
         html_text()
+
+a %>%
+        html_nodes("div.footballbox") %>%
+        html_nodes("th.fscore") %>%
+        html_text() %>%
+        str_split("[–-]") %>%
+        map_chr(.f = function(x) {x[1]}) %>%
+        as.integer()
+
+str_split(scores[1], "[–-]")
+
+get_match_scores(a)
+
 
 # Goals
 a %>%
